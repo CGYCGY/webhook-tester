@@ -34,6 +34,10 @@ func (s *Server) Router() *chi.Mux {
 	r.Post("/login", authHandler.Login)
 
 	webhookHandler := handler.NewWebhook(s.queries, s.config)
+	hookHandler := handler.NewHook(s.queries, s.config)
+
+	// Public hook capture endpoint
+	r.HandleFunc("/hook/{uuid}", hookHandler.CaptureRequest)
 
 	// Authenticated routes
 	r.Group(func(r chi.Router) {
@@ -43,6 +47,7 @@ func (s *Server) Router() *chi.Mux {
 		r.Get("/dashboard", webhookHandler.ListWebhooks)
 		r.Get("/settings", handler.Settings)
 		r.Post("/webhooks", webhookHandler.CreateWebhook)
+		r.Get("/webhooks/{uuid}", webhookHandler.ViewWebhook)
 		r.Put("/webhooks/{uuid}", webhookHandler.EditWebhook)
 		r.Delete("/webhooks/{uuid}", webhookHandler.DeleteWebhook)
 	})
