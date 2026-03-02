@@ -33,13 +33,18 @@ func (s *Server) Router() *chi.Mux {
 	r.Get("/login", authHandler.LoginPage)
 	r.Post("/login", authHandler.Login)
 
+	webhookHandler := handler.NewWebhook(s.queries, s.config)
+
 	// Authenticated routes
 	r.Group(func(r chi.Router) {
 		r.Use(auth.Middleware(s.config.JWTSecret))
 
 		r.Post("/logout", authHandler.Logout)
-		r.Get("/dashboard", handler.Dashboard)
+		r.Get("/dashboard", webhookHandler.ListWebhooks)
 		r.Get("/settings", handler.Settings)
+		r.Post("/webhooks", webhookHandler.CreateWebhook)
+		r.Put("/webhooks/{uuid}", webhookHandler.EditWebhook)
+		r.Delete("/webhooks/{uuid}", webhookHandler.DeleteWebhook)
 	})
 
 	return r
