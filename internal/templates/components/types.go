@@ -34,4 +34,6 @@ type DetailRequestView struct {
 	CreatedAt     string
 	HeadersJSON   string
 	QueryJSON     string
+	BodyFormatted string
+	BodyLanguage  string
 }

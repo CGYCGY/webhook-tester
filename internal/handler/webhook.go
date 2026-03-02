@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"strings"
@@ -335,6 +337,8 @@ func (h *WebhookHandler) ViewRequest(w http.ResponseWriter, r *http.Request) {
 		path = "/"
 	}
 
+	bodyFormatted, bodyLanguage := formatBody(req.Body, req.ContentType)
+
 	detailView := templates.DetailRequestView{
 		ID:            req.ID,
 		WebhookID:     req.WebhookID,
@@ -349,6 +353,8 @@ func (h *WebhookHandler) ViewRequest(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:     req.CreatedAt.Format("Jan 2, 2006 3:04 PM"),
 		HeadersJSON:   prettyJSON(req.Headers),
 		QueryJSON:     prettyJSON(req.QueryParams),
+		BodyFormatted: bodyFormatted,
+		BodyLanguage:  bodyLanguage,
 	}
 
 	templates.RequestDetailPage(webhookView, detailView).Render(r.Context(), w)
@@ -364,6 +370,42 @@ func prettyJSON(raw string) string {
 		return raw
 	}
 	return string(pretty)
+}
+
+func prettyXML(raw string) string {
+	dec := xml.NewDecoder(strings.NewReader(raw))
+	var buf bytes.Buffer
+	enc := xml.NewEncoder(&buf)
+	enc.Indent("", "  ")
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			break
+		}
+		if err := enc.EncodeToken(tok); err != nil {
+			return raw
+		}
+	}
+	if err := enc.Flush(); err != nil {
+		return raw
+	}
+	result := buf.String()
+	if result == "" {
+		return raw
+	}
+	return result
+}
+
+func formatBody(body, contentType string) (formatted, language string) {
+	ct := strings.ToLower(contentType)
+	switch {
+	case strings.Contains(ct, "application/json") || strings.Contains(ct, "text/json"):
+		return prettyJSON(body), "json"
+	case strings.Contains(ct, "application/xml") || strings.Contains(ct, "text/xml"):
+		return prettyXML(body), "xml"
+	default:
+		return body, "text"
+	}
 }
 
 func validateWebhookFields(name, description string) string {
