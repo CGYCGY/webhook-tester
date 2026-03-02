@@ -2,21 +2,50 @@ package templates
 
 import "github.com/cgy/webhook-tester/internal/templates/components"
 
-templ DashboardPage() {
+templ DashboardPage(webhooks []WebhookView) {
 	@Layout("Dashboard") {
 		@components.Navbar()
 		<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-			<div class="mb-8">
-				<h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
-				<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage and monitor your webhook endpoints.</p>
+			<div class="mb-8 flex items-center justify-between">
+				<div>
+					<h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+					<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage and monitor your webhook endpoints.</p>
+				</div>
+				<button
+					type="button"
+					onclick="document.getElementById('create-form').classList.toggle('hidden')"
+					class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
+					</svg>
+					New Webhook
+				</button>
 			</div>
-			<div class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-20 text-center">
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 dark:text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"></path>
-				</svg>
-				<h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">No webhooks yet</h3>
-				<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Coming soon — webhook management will be available here.</p>
+			<div id="create-form" class="hidden mb-6">
+				@components.CreateWebhookForm()
 			</div>
+			if len(webhooks) == 0 {
+				<div id="webhook-list">
+					@emptyState()
+				</div>
+			} else {
+				<div id="webhook-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+					for _, wh := range webhooks {
+						@components.WebhookCard(wh)
+					}
+				</div>
+			}
 		</main>
 	}
+}
+
+templ emptyState() {
+	<div class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-20 text-center">
+		<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 dark:text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+			<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"></path>
+		</svg>
+		<h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">No webhooks yet</h3>
+		<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Create your first webhook to start capturing requests.</p>
+	</div>
 }
