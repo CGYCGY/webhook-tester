@@ -2,13 +2,11 @@ FROM golang:1.26.0-alpine AS builder
 
 RUN apk add --no-cache gcc musl-dev
 
-# Install templ
-RUN go install github.com/a-h/templ/cmd/templ@v0.3.1001
+# Install templ and sqlc via prebuilt binaries
+RUN wget -qO- https://github.com/a-h/templ/releases/download/v0.3.1001/templ_Linux_x86_64.tar.gz | tar -xz -C /usr/local/bin templ && \
+    wget -qO- https://github.com/sqlc-dev/sqlc/releases/download/v1.30.0/sqlc_1.30.0_linux_amd64.tar.gz | tar -xz -C /usr/local/bin sqlc
 
-# Install sqlc
-RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
-
-# Install Tailwind CSS standalone
+# Install Tailwind CSS
 RUN apk add --no-cache nodejs npm && \
     npm install -g tailwindcss@4.2.1 @tailwindcss/cli@4.2.1
 
