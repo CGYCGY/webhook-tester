@@ -42,4 +42,7 @@ VOLUME /data
 ENV DATA_DIR=/data
 EXPOSE 8090
 
+HEALTHCHECK --interval=60s --timeout=5s --start-period=10s --retries=3 \
+  CMD nc -z localhost 8090
+
 ENTRYPOINT ["server"]
