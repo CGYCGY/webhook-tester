@@ -1,0 +1,3 @@
+ALTER TABLE requests ADD COLUMN response_status INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE requests ADD COLUMN response_headers TEXT NOT NULL DEFAULT '{}';
+ALTER TABLE requests ADD COLUMN response_body TEXT NOT NULL DEFAULT '';

@@ -111,21 +111,48 @@ func (h *HookHandler) CaptureRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	queryJSON, _ := json.Marshal(queryMap)
 
+	// Determine response before storing so we can record exactly what was sent.
+	cfg, configured := parseResponseConfig(wh.ResponseConfig)
+	var respStatus int
+	var respCT, respBody string
+	if !configured {
+		respStatus = http.StatusOK
+		respCT = "application/json"
+		respBodyBytes, _ := json.Marshal(map[string]string{
+			"status":  "ok",
+			"message": "Request captured",
+		})
+		respBody = string(respBodyBytes)
+	} else {
+		respStatus = cfg.Status
+		respCT = cfg.ContentType
+		if respCT == "" {
+			respCT = "text/plain"
+		}
+		if cfg.Body != "" {
+			respBody = resolveTemplate(cfg.Body, r, body)
+		}
+	}
+	respHeadersJSON, _ := json.Marshal(map[string]string{"Content-Type": respCT})
+
 	reqID := uuid.New().String()
 	now := time.Now().UTC()
 
 	if err := h.queries.CreateRequest(r.Context(), sqlc.CreateRequestParams{
-		ID:            reqID,
-		WebhookID:     webhookID,
-		Method:        r.Method,
-		Path:          r.URL.Path,
-		QueryParams:   string(queryJSON),
-		Headers:       string(headersJSON),
-		Body:          string(body),
-		ContentType:   r.Header.Get("Content-Type"),
-		SourceIp:      r.RemoteAddr,
-		ContentLength: r.ContentLength,
-		CreatedAt:     now,
+		ID:              reqID,
+		WebhookID:       webhookID,
+		Method:          r.Method,
+		Path:            r.URL.Path,
+		QueryParams:     string(queryJSON),
+		Headers:         string(headersJSON),
+		Body:            string(body),
+		ContentType:     r.Header.Get("Content-Type"),
+		SourceIp:        r.RemoteAddr,
+		ContentLength:   r.ContentLength,
+		CreatedAt:       now,
+		ResponseStatus:  int64(respStatus),
+		ResponseHeaders: string(respHeadersJSON),
+		ResponseBody:    respBody,
 	}); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -157,25 +184,9 @@ func (h *HookHandler) CaptureRequest(w http.ResponseWriter, r *http.Request) {
 	_ = components.RequestRow(reqView).Render(context.Background(), &buf)
 	h.hub.Publish(webhookID, buf.Bytes())
 
-	cfg, configured := parseResponseConfig(wh.ResponseConfig)
-	if !configured {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{
-			"status":  "ok",
-			"message": "Request captured",
-		})
-		return
-	}
-
-	ct := cfg.ContentType
-	if ct == "" {
-		ct = "text/plain"
-	}
-	w.Header().Set("Content-Type", ct)
-	w.WriteHeader(cfg.Status)
-	if cfg.Body != "" {
-		resolved := resolveTemplate(cfg.Body, r, body)
-		w.Write([]byte(resolved))
+	w.Header().Set("Content-Type", respCT)
+	w.WriteHeader(respStatus)
+	if respBody != "" {
+		w.Write([]byte(respBody))
 	}
 }

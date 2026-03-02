@@ -348,6 +348,12 @@ func (h *WebhookHandler) ViewRequest(w http.ResponseWriter, r *http.Request) {
 
 	bodyFormatted, bodyLanguage := formatBody(req.Body, req.ContentType)
 
+	var respHeaders map[string]string
+	if err := json.Unmarshal([]byte(req.ResponseHeaders), &respHeaders); err != nil {
+		respHeaders = make(map[string]string)
+	}
+	respBodyFormatted, respBodyLanguage := formatBody(req.ResponseBody, respHeaders["Content-Type"])
+
 	detailView := templates.DetailRequestView{
 		ID:            req.ID,
 		WebhookID:     req.WebhookID,
@@ -364,6 +370,13 @@ func (h *WebhookHandler) ViewRequest(w http.ResponseWriter, r *http.Request) {
 		QueryJSON:     prettyJSON(req.QueryParams),
 		BodyFormatted: bodyFormatted,
 		BodyLanguage:  bodyLanguage,
+
+		ResponseStatus:        int(req.ResponseStatus),
+		ResponseHeaders:       respHeaders,
+		ResponseHeadersJSON:   prettyJSON(req.ResponseHeaders),
+		ResponseBody:          req.ResponseBody,
+		ResponseBodyFormatted: respBodyFormatted,
+		ResponseBodyLanguage:  respBodyLanguage,
 	}
 
 	templates.RequestDetailPage(webhookView, detailView).Render(r.Context(), w)

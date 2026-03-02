@@ -11,22 +11,25 @@ import (
 )
 
 const createRequest = `-- name: CreateRequest :exec
-INSERT INTO requests (id, webhook_id, method, path, query_params, headers, body, content_type, source_ip, content_length, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO requests (id, webhook_id, method, path, query_params, headers, body, content_type, source_ip, content_length, created_at, response_status, response_headers, response_body)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateRequestParams struct {
-	ID            string
-	WebhookID     string
-	Method        string
-	Path          string
-	QueryParams   string
-	Headers       string
-	Body          string
-	ContentType   string
-	SourceIp      string
-	ContentLength int64
-	CreatedAt     time.Time
+	ID              string
+	WebhookID       string
+	Method          string
+	Path            string
+	QueryParams     string
+	Headers         string
+	Body            string
+	ContentType     string
+	SourceIp        string
+	ContentLength   int64
+	CreatedAt       time.Time
+	ResponseStatus  int64
+	ResponseHeaders string
+	ResponseBody    string
 }
 
 func (q *Queries) CreateRequest(ctx context.Context, arg CreateRequestParams) error {
@@ -42,6 +45,9 @@ func (q *Queries) CreateRequest(ctx context.Context, arg CreateRequestParams) er
 		arg.SourceIp,
 		arg.ContentLength,
 		arg.CreatedAt,
+		arg.ResponseStatus,
+		arg.ResponseHeaders,
+		arg.ResponseBody,
 	)
 	return err
 }
@@ -62,7 +68,7 @@ func (q *Queries) DeleteOldRequests(ctx context.Context, webhookID string) error
 }
 
 const getRequestByID = `-- name: GetRequestByID :one
-SELECT id, webhook_id, method, path, query_params, headers, body, content_type, source_ip, content_length, created_at
+SELECT id, webhook_id, method, path, query_params, headers, body, content_type, source_ip, content_length, created_at, response_status, response_headers, response_body
 FROM requests
 WHERE id = ?
 LIMIT 1
@@ -83,12 +89,15 @@ func (q *Queries) GetRequestByID(ctx context.Context, id string) (Request, error
 		&i.SourceIp,
 		&i.ContentLength,
 		&i.CreatedAt,
+		&i.ResponseStatus,
+		&i.ResponseHeaders,
+		&i.ResponseBody,
 	)
 	return i, err
 }
 
 const listRequestsByWebhookID = `-- name: ListRequestsByWebhookID :many
-SELECT id, webhook_id, method, path, query_params, headers, body, content_type, source_ip, content_length, created_at
+SELECT id, webhook_id, method, path, query_params, headers, body, content_type, source_ip, content_length, created_at, response_status, response_headers, response_body
 FROM requests
 WHERE webhook_id = ?
 ORDER BY created_at DESC
@@ -121,6 +130,9 @@ func (q *Queries) ListRequestsByWebhookID(ctx context.Context, arg ListRequestsB
 			&i.SourceIp,
 			&i.ContentLength,
 			&i.CreatedAt,
+			&i.ResponseStatus,
+			&i.ResponseHeaders,
+			&i.ResponseBody,
 		); err != nil {
 			return nil, err
 		}

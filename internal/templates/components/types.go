@@ -39,4 +39,11 @@ type DetailRequestView struct {
 	QueryJSON     string
 	BodyFormatted string
 	BodyLanguage  string
+
+	ResponseStatus        int
+	ResponseHeaders       map[string]string
+	ResponseHeadersJSON   string
+	ResponseBody          string
+	ResponseBodyFormatted string
+	ResponseBodyLanguage  string
 }

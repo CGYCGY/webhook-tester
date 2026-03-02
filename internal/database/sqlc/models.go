@@ -9,17 +9,20 @@ import (
 )
 
 type Request struct {
-	ID            string
-	WebhookID     string
-	Method        string
-	Path          string
-	QueryParams   string
-	Headers       string
-	Body          string
-	ContentType   string
-	SourceIp      string
-	ContentLength int64
-	CreatedAt     time.Time
+	ID              string
+	WebhookID       string
+	Method          string
+	Path            string
+	QueryParams     string
+	Headers         string
+	Body            string
+	ContentType     string
+	SourceIp        string
+	ContentLength   int64
+	CreatedAt       time.Time
+	ResponseStatus  int64
+	ResponseHeaders string
+	ResponseBody    string
 }
 
 type User struct {
