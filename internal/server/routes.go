@@ -34,7 +34,8 @@ func (s *Server) Router() *chi.Mux {
 	r.Post("/login", authHandler.Login)
 
 	webhookHandler := handler.NewWebhook(s.queries, s.config)
-	hookHandler := handler.NewHook(s.queries, s.config)
+	hookHandler := handler.NewHook(s.queries, s.config, s.hub, s.whLimiter, s.ipLimiter)
+	sseHandler := handler.NewSSE(s.queries, s.config, s.hub)
 
 	// Public hook capture endpoint
 	r.HandleFunc("/hook/{uuid}", hookHandler.CaptureRequest)
@@ -48,6 +49,7 @@ func (s *Server) Router() *chi.Mux {
 		r.Get("/settings", handler.Settings)
 		r.Post("/webhooks", webhookHandler.CreateWebhook)
 		r.Get("/webhooks/{uuid}", webhookHandler.ViewWebhook)
+		r.Get("/webhooks/{uuid}/sse", sseHandler.Stream)
 		r.Get("/webhooks/{uuid}/requests/{requestID}", webhookHandler.ViewRequest)
 		r.Put("/webhooks/{uuid}", webhookHandler.EditWebhook)
 		r.Delete("/webhooks/{uuid}", webhookHandler.DeleteWebhook)

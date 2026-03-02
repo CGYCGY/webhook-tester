@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -8,24 +10,55 @@ import (
 
 	"github.com/cgy/webhook-tester/internal/config"
 	"github.com/cgy/webhook-tester/internal/database/sqlc"
+	"github.com/cgy/webhook-tester/internal/ratelimit"
+	"github.com/cgy/webhook-tester/internal/sse"
+	"github.com/cgy/webhook-tester/internal/templates/components"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
 type HookHandler struct {
-	queries *sqlc.Queries
-	config  *config.Config
+	queries   *sqlc.Queries
+	config    *config.Config
+	hub       *sse.Hub
+	whLimiter *ratelimit.Limiter
+	ipLimiter *ratelimit.Limiter
 }
 
-func NewHook(queries *sqlc.Queries, cfg *config.Config) *HookHandler {
+func NewHook(queries *sqlc.Queries, cfg *config.Config, hub *sse.Hub, whLimiter, ipLimiter *ratelimit.Limiter) *HookHandler {
 	return &HookHandler{
-		queries: queries,
-		config:  cfg,
+		queries:   queries,
+		config:    cfg,
+		hub:       hub,
+		whLimiter: whLimiter,
+		ipLimiter: ipLimiter,
 	}
 }
 
 func (h *HookHandler) CaptureRequest(w http.ResponseWriter, r *http.Request) {
 	webhookID := chi.URLParam(r, "uuid")
+
+	// Check max body size from Content-Length header
+	if r.ContentLength > h.config.MaxBodySize {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "error",
+			"message": "Request body too large",
+		})
+		return
+	}
+
+	// Per-IP rate limit
+	if !h.ipLimiter.Allow(r.RemoteAddr) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusTooManyRequests)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "error",
+			"message": "Rate limit exceeded",
+		})
+		return
+	}
 
 	_, err := h.queries.GetWebhookByID(r.Context(), webhookID)
 	if err != nil {
@@ -38,7 +71,29 @@ func (h *HookHandler) CaptureRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, _ := io.ReadAll(r.Body)
+	// Per-webhook rate limit (checked after webhook existence validation)
+	if !h.whLimiter.Allow(webhookID) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusTooManyRequests)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "error",
+			"message": "Rate limit exceeded",
+		})
+		return
+	}
+
+	// Read body with MaxBytesReader as safety net
+	r.Body = http.MaxBytesReader(w, r.Body, h.config.MaxBodySize)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "error",
+			"message": "Request body too large",
+		})
+		return
+	}
 
 	headersMap := make(map[string]string, len(r.Header))
 	for k, v := range r.Header {
@@ -68,7 +123,7 @@ func (h *HookHandler) CaptureRequest(w http.ResponseWriter, r *http.Request) {
 		Headers:       string(headersJSON),
 		Body:          string(body),
 		ContentType:   r.Header.Get("Content-Type"),
-		SourceIP:      r.RemoteAddr,
+		SourceIp:      r.RemoteAddr,
 		ContentLength: r.ContentLength,
 		CreatedAt:     now,
 	}); err != nil {
@@ -81,10 +136,26 @@ func (h *HookHandler) CaptureRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = h.queries.DeleteOldRequests(r.Context(), sqlc.DeleteOldRequestsParams{
-		WebhookID:      webhookID,
-		WebhookIDInner: webhookID,
-	})
+	_ = h.queries.DeleteOldRequests(r.Context(), webhookID)
+
+	// Publish to SSE hub for real-time updates
+	path := r.URL.Path
+	if path == "" {
+		path = "/"
+	}
+	reqView := components.RequestView{
+		ID:            reqID,
+		WebhookID:     webhookID,
+		Method:        r.Method,
+		Path:          path,
+		SourceIP:      r.RemoteAddr,
+		ContentType:   r.Header.Get("Content-Type"),
+		ContentLength: r.ContentLength,
+		CreatedAt:     now.Format("Jan 2, 2006 3:04 PM"),
+	}
+	var buf bytes.Buffer
+	_ = components.RequestRow(reqView).Render(context.Background(), &buf)
+	h.hub.Publish(webhookID, buf.Bytes())
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
