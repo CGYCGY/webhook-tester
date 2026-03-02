@@ -1,7 +1,7 @@
 package components
 
 templ MethodBadge(method string) {
-	<span class={ "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium " + methodBadgeColor(method) }>
+	<span class={ "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold tracking-wider ring-1 ring-inset " + methodBadgeColor(method) }>
 		{ method }
 	</span>
 }
@@ -9,16 +9,16 @@ templ MethodBadge(method string) {
 func methodBadgeColor(method string) string {
 	switch method {
 	case "GET":
-		return "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300"
+		return "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 ring-green-400/50 dark:ring-green-500/40"
 	case "POST":
-		return "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300"
+		return "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 ring-blue-400/50 dark:ring-blue-500/40"
 	case "PUT":
-		return "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300"
+		return "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 ring-amber-400/50 dark:ring-amber-500/40"
 	case "PATCH":
-		return "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300"
+		return "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 ring-purple-400/50 dark:ring-purple-500/40"
 	case "DELETE":
-		return "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300"
+		return "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 ring-red-400/50 dark:ring-red-500/40"
 	default:
-		return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
+		return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 ring-gray-400/50 dark:ring-gray-500/40"
 	}
 }

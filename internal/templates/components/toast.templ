@@ -4,7 +4,7 @@ templ Toast(message string, toastType string) {
 	if message != "" {
 		<div
 			id="toast-notification"
-			class={ "fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-opacity duration-300 " + toastColorClass(toastType) }
+			class={ "fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 animate-slide-in " + toastColorClass(toastType) }
 			role="alert"
 		>
 			if toastType == "success" {

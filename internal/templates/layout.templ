@@ -7,7 +7,57 @@ templ Layout(title string) {
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ title } - Webhook Tester</title>
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+			<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 			<link rel="stylesheet" href="/static/css/output.css"/>
+			<style>
+				:root {
+					--brand: #0891b2;
+					--brand-light: #22d3ee;
+					--brand-dark: #0e7490;
+				}
+				body {
+					font-family: 'Outfit', sans-serif;
+					background-color: #f8fafc;
+					background-image: radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px);
+					background-size: 24px 24px;
+				}
+				.dark body {
+					background-color: #0f172a;
+					background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+					background-size: 24px 24px;
+				}
+				code, pre, .font-mono {
+					font-family: 'JetBrains Mono', monospace;
+				}
+				@keyframes fadeInUp {
+					from {
+						opacity: 0;
+						transform: translateY(12px);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0);
+					}
+				}
+				@keyframes slideIn {
+					from {
+						opacity: 0;
+						transform: translateX(-8px);
+					}
+					to {
+						opacity: 1;
+						transform: translateX(0);
+					}
+				}
+				.animate-fade-in-up {
+					animation: fadeInUp 0.4s ease-out both;
+				}
+				.animate-slide-in {
+					animation: slideIn 0.3s ease-out both;
+				}
+			</style>
 			<script src="https://unpkg.com/htmx.org@2.0.4"></script>
 			<script src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js"></script>
 			<script>
