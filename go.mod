@@ -1,9 +1,9 @@
 module github.com/cgy/webhook-tester
 
-go 1.23.0
+go 1.26.0
 
 require (
-	github.com/a-h/templ v0.3.857
+	github.com/a-h/templ v0.3.1001
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang-migrate/migrate/v4 v4.18.2

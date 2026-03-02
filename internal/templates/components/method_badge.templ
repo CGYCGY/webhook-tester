@@ -1,7 +1,7 @@
 package components
 
 templ MethodBadge(method string) {
-	<span class={ "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold tracking-wider ring-1 ring-inset " + methodBadgeColor(method) }>
+	<span class={ "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold tracking-wider inset-ring-1" + methodBadgeColor(method) }>
 		{ method }
 	</span>
 }
