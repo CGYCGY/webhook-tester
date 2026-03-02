@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -276,6 +277,81 @@ func (h *WebhookHandler) ViewWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templates.WebhookDetailPage(webhookView, requestViews).Render(r.Context(), w)
+}
+
+func (h *WebhookHandler) ViewRequest(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetUserFromContext(r.Context())
+	if claims == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	webhookID := chi.URLParam(r, "uuid")
+	requestID := chi.URLParam(r, "requestID")
+
+	wh, err := h.queries.GetWebhookByID(r.Context(), webhookID)
+	if err != nil {
+		http.Error(w, "Webhook not found", http.StatusNotFound)
+		return
+	}
+
+	if wh.UserID != claims.UserID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	req, err := h.queries.GetRequestByID(r.Context(), requestID)
+	if err != nil {
+		http.Error(w, "Request not found", http.StatusNotFound)
+		return
+	}
+
+	if req.WebhookID != webhookID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	var headers map[string]string
+	if err := json.Unmarshal([]byte(req.Headers), &headers); err != nil {
+		headers = make(map[string]string)
+	}
+
+	var queryParams map[string]string
+	if err := json.Unmarshal([]byte(req.QueryParams), &queryParams); err != nil {
+		queryParams = make(map[string]string)
+	}
+
+	base := baseURL(r)
+	webhookView := templates.WebhookView{
+		ID:          wh.ID,
+		Name:        wh.Name,
+		Description: wh.Description,
+		URL:         fmt.Sprintf("%s/hook/%s", base, wh.ID),
+		CreatedAt:   wh.CreatedAt.Format("Jan 2, 2006"),
+	}
+
+	path := req.Path
+	if path == "" {
+		path = "/"
+	}
+
+	detailView := templates.DetailRequestView{
+		ID:            req.ID,
+		WebhookID:     req.WebhookID,
+		Method:        req.Method,
+		Path:          path,
+		Headers:       headers,
+		QueryParams:   queryParams,
+		Body:          req.Body,
+		ContentType:   req.ContentType,
+		SourceIP:      req.SourceIP,
+		ContentLength: req.ContentLength,
+		CreatedAt:     req.CreatedAt.Format("Jan 2, 2006 3:04 PM"),
+		HeadersJSON:   req.Headers,
+		QueryJSON:     req.QueryParams,
+	}
+
+	templates.RequestDetailPage(webhookView, detailView).Render(r.Context(), w)
 }
 
 func validateWebhookFields(name, description string) string {

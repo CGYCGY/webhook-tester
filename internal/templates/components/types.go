@@ -19,3 +19,19 @@ type RequestView struct {
 	ContentLength int64
 	CreatedAt     string
 }
+
+type DetailRequestView struct {
+	ID            string
+	WebhookID     string
+	Method        string
+	Path          string
+	Headers       map[string]string
+	QueryParams   map[string]string
+	Body          string
+	ContentType   string
+	SourceIP      string
+	ContentLength int64
+	CreatedAt     string
+	HeadersJSON   string
+	QueryJSON     string
+}
