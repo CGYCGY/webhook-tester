@@ -347,11 +347,23 @@ func (h *WebhookHandler) ViewRequest(w http.ResponseWriter, r *http.Request) {
 		SourceIP:      req.SourceIP,
 		ContentLength: req.ContentLength,
 		CreatedAt:     req.CreatedAt.Format("Jan 2, 2006 3:04 PM"),
-		HeadersJSON:   req.Headers,
-		QueryJSON:     req.QueryParams,
+		HeadersJSON:   prettyJSON(req.Headers),
+		QueryJSON:     prettyJSON(req.QueryParams),
 	}
 
 	templates.RequestDetailPage(webhookView, detailView).Render(r.Context(), w)
+}
+
+func prettyJSON(raw string) string {
+	var data any
+	if err := json.Unmarshal([]byte(raw), &data); err != nil {
+		return raw
+	}
+	pretty, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return raw
+	}
+	return string(pretty)
 }
 
 func validateWebhookFields(name, description string) string {
