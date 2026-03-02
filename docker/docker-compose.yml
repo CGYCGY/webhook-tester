@@ -13,11 +13,11 @@ services:
     working_dir: /app
     command: sleep infinity
     environment:
-      - PORT=8090
-      - DATA_DIR=/data
-      - ADMIN_EMAIL=admin@example.com
-      - ADMIN_PASSWORD=changeme123
-      - JWT_SECRET=change-this-secret-in-production
+      - PORT=${PORT:-8090}
+      - DATA_DIR=${DATA_DIR:-/data}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme123}
+      - JWT_SECRET=${JWT_SECRET:-change-this-secret-in-production}
       - CGO_ENABLED=1
 
 volumes:

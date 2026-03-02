@@ -1,4 +1,4 @@
-compose := "docker compose -f docker/docker-compose.yml"
+compose := "docker compose -f docker/docker-compose.yml --env-file .env"
 exec := compose + " exec dev"
 
 # Default recipe
