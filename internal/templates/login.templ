@@ -1,0 +1,75 @@
+package templates
+
+templ LoginPage(errorMsg string) {
+	@Layout("Sign In") {
+		<div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+			<div class="sm:mx-auto sm:w-full sm:max-w-md">
+				<div class="flex justify-center">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"></path>
+					</svg>
+				</div>
+				<h2 class="mt-4 text-center text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+					Webhook Tester
+				</h2>
+				<p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+					Sign in to your account
+				</p>
+			</div>
+			<div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+				<div class="bg-white dark:bg-gray-800 py-8 px-4 shadow-md rounded-xl sm:px-10 border border-gray-200 dark:border-gray-700">
+					if errorMsg != "" {
+						<div class="mb-4 flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"></path>
+							</svg>
+							<span>{ errorMsg }</span>
+						</div>
+					}
+					<form method="POST" action="/login" class="space-y-6">
+						<div>
+							<label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+								Email address
+							</label>
+							<div class="mt-1">
+								<input
+									id="email"
+									name="email"
+									type="email"
+									autocomplete="email"
+									required
+									class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
+									placeholder="you@example.com"
+								/>
+							</div>
+						</div>
+						<div>
+							<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+								Password
+							</label>
+							<div class="mt-1">
+								<input
+									id="password"
+									name="password"
+									type="password"
+									autocomplete="current-password"
+									required
+									class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
+									placeholder="••••••••"
+								/>
+							</div>
+						</div>
+						<div>
+							<button
+								type="submit"
+								class="flex w-full justify-center rounded-lg bg-indigo-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors"
+							>
+								Sign In
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	}
+}

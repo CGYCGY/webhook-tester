@@ -1,0 +1,40 @@
+package components
+
+templ Toast(message string, toastType string) {
+	if message != "" {
+		<div
+			id="toast-notification"
+			class={ "fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-opacity duration-300 " + toastColorClass(toastType) }
+			role="alert"
+		>
+			if toastType == "success" {
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
+				</svg>
+			} else {
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"></path>
+				</svg>
+			}
+			<span>{ message }</span>
+			<script>
+				(function() {
+					var toast = document.getElementById('toast-notification');
+					if (toast) {
+						setTimeout(function() {
+							toast.style.opacity = '0';
+							setTimeout(function() { toast.remove(); }, 300);
+						}, 3000);
+					}
+				})();
+			</script>
+		</div>
+	}
+}
+
+func toastColorClass(toastType string) string {
+	if toastType == "success" {
+		return "bg-green-50 dark:bg-green-900/50 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700"
+	}
+	return "bg-red-50 dark:bg-red-900/50 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-700"
+}
