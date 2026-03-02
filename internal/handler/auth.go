@@ -8,6 +8,7 @@ import (
 	"github.com/cgy/webhook-tester/internal/auth"
 	"github.com/cgy/webhook-tester/internal/config"
 	"github.com/cgy/webhook-tester/internal/database/sqlc"
+	"github.com/cgy/webhook-tester/internal/templates"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -24,7 +25,6 @@ func NewAuth(queries *sqlc.Queries, cfg *config.Config) *AuthHandler {
 }
 
 func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
-	// If user already has a valid token, redirect to dashboard.
 	if cookie, err := r.Cookie("token"); err == nil {
 		if _, err := auth.ValidateToken(cookie.Value, h.config.JWTSecret); err == nil {
 			http.Redirect(w, r, "/dashboard", http.StatusFound)
@@ -32,15 +32,12 @@ func (h *AuthHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := loginTmpl.Execute(w, loginData{}); err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-	}
+	templates.LoginPage("").Render(r.Context(), w)
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		h.renderLoginError(w, "Invalid form submission.")
+		h.renderLoginError(w, r, "Invalid form submission.")
 		return
 	}
 
@@ -48,28 +45,28 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 
 	if email == "" || password == "" {
-		h.renderLoginError(w, "Email and password are required.")
+		h.renderLoginError(w, r, "Email and password are required.")
 		return
 	}
 
 	user, err := h.queries.GetUserByEmail(r.Context(), email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			h.renderLoginError(w, "Invalid email or password.")
+			h.renderLoginError(w, r, "Invalid email or password.")
 			return
 		}
-		h.renderLoginError(w, "An error occurred. Please try again.")
+		h.renderLoginError(w, r, "An error occurred. Please try again.")
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		h.renderLoginError(w, "Invalid email or password.")
+		h.renderLoginError(w, r, "Invalid email or password.")
 		return
 	}
 
 	token, err := auth.GenerateToken(user.ID, user.Email, h.config.JWTSecret)
 	if err != nil {
-		h.renderLoginError(w, "An error occurred. Please try again.")
+		h.renderLoginError(w, r, "An error occurred. Please try again.")
 		return
 	}
 
@@ -98,10 +95,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
-func (h *AuthHandler) renderLoginError(w http.ResponseWriter, errMsg string) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+func (h *AuthHandler) renderLoginError(w http.ResponseWriter, r *http.Request, errMsg string) {
 	w.WriteHeader(http.StatusUnauthorized)
-	if err := loginTmpl.Execute(w, loginData{Error: errMsg}); err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-	}
+	templates.LoginPage(errMsg).Render(r.Context(), w)
 }
