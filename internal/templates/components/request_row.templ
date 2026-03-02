@@ -5,13 +5,13 @@ import "fmt"
 templ RequestRow(req RequestView) {
 	<a
 		href={ templ.SafeURL("/webhooks/" + req.WebhookID + "/requests/" + req.ID) }
-		class="animate-slide-in flex items-center gap-4 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md hover:border-cyan-300 dark:hover:border-cyan-600 hover:-translate-y-0.5 transition-all duration-150 group"
+		class="animate-slide-in flex items-center gap-4 px-4 py-3 bg-white dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/50 rounded-lg hover:border-cyan-400/50 dark:hover:border-cyan-500/30 hover:shadow-sm hover:shadow-cyan-500/5 hover:-translate-y-0.5 transition-all duration-150 group"
 	>
 		<div class="shrink-0">
 			@MethodBadge(req.Method)
 		</div>
 		<div class="flex-1 min-w-0">
-			<p class="text-sm font-mono text-gray-900 dark:text-gray-100 truncate">
+			<p class="text-sm font-mono text-slate-900 dark:text-slate-100 truncate">
 				if req.Path != "" {
 					{ req.Path }
 				} else {
@@ -19,17 +19,17 @@ templ RequestRow(req RequestView) {
 				}
 			</p>
 			if req.ContentType != "" {
-				<p class="text-xs text-gray-500 dark:text-gray-400 truncate">{ req.ContentType }</p>
+				<p class="font-mono text-xs text-slate-500 dark:text-slate-400 truncate">{ req.ContentType }</p>
 			}
 		</div>
-		<div class="hidden sm:flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+		<div class="hidden sm:flex items-center gap-4 font-mono text-xs text-slate-500 dark:text-slate-400 shrink-0">
 			<span>{ req.SourceIP }</span>
 			<span>{ fmt.Sprintf("%d B", req.ContentLength) }</span>
 		</div>
-		<div class="shrink-0 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+		<div class="shrink-0 font-mono text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">
 			{ req.CreatedAt }
 		</div>
-		<div class="shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-cyan-500 dark:group-hover:text-cyan-400">
+		<div class="shrink-0 text-slate-400 dark:text-slate-500 group-hover:text-cyan-500 dark:group-hover:text-cyan-400">
 			<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
 				<path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
 			</svg>

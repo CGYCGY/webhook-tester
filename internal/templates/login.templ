@@ -2,37 +2,35 @@ package templates
 
 templ LoginPage(errorMsg string) {
 	@Layout("Sign In") {
-		<div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 via-cyan-950 to-slate-900 relative">
+		<div class="text-white min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-950 via-cyan-950 to-slate-950 relative">
 			<div class="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.05)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
 			<div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
 				<div class="flex justify-center animate-fade-in-up" style="animation-delay: 0ms;">
 					<div class="relative">
 						<div class="absolute inset-0 rounded-full bg-cyan-500/20 blur-xl animate-pulse"></div>
-						<svg xmlns="http://www.w3.org/2000/svg" class="relative h-12 w-12 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"></path>
-						</svg>
+						<span class="relative font-mono text-4xl font-bold text-cyan-400">&gt;_</span>
 					</div>
 				</div>
-				<h2 class="mt-4 text-center text-3xl font-bold tracking-tight text-white font-['Outfit'] animate-fade-in-up" style="animation-delay: 0ms;">
+				<h2 class="mt-4 text-center text-3xl font-mono font-bold tracking-tight text-white animate-fade-in-up" style="animation-delay: 0ms;">
 					Webhook Tester
 				</h2>
-				<p class="mt-2 text-center text-sm text-cyan-200/70 animate-fade-in-up" style="animation-delay: 0ms;">
-					Sign in to your account
+				<p class="mt-2 text-center animate-fade-in-up" style="animation-delay: 0ms;">
+					<span class="font-mono text-cyan-300/60 text-sm">$ authenticate --user</span>
 				</p>
 			</div>
 			<div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 animate-fade-in-up" style="animation-delay: 150ms;">
-				<div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm py-8 px-4 shadow-md rounded-xl sm:px-10 border border-gray-200 dark:border-gray-700 border-t-2 border-t-cyan-500">
+				<div class="bg-white/5 dark:bg-slate-800/50 backdrop-blur-md py-8 px-4 shadow-md rounded-xl sm:px-10 border border-slate-700/50">
 					if errorMsg != "" {
-						<div class="mb-4 flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+						<div class="mb-4 flex items-center gap-2 rounded-lg bg-red-900/40 border border-red-700 px-4 py-3 text-sm text-red-300">
 							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
 								<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"></path>
 							</svg>
-							<span>{ errorMsg }</span>
+							<span class="font-mono">{ errorMsg }</span>
 						</div>
 					}
 					<form method="POST" action="/login" class="space-y-6">
 						<div>
-							<label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+							<label for="email" class="block font-mono text-xs uppercase tracking-wider text-slate-400">
 								Email address
 							</label>
 							<div class="mt-1">
@@ -42,13 +40,13 @@ templ LoginPage(errorMsg string) {
 									type="email"
 									autocomplete="email"
 									required
-									class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 sm:text-sm"
+									class="block w-full rounded-lg border border-slate-700 bg-slate-900/50 dark:bg-slate-900 px-3 py-2 text-slate-100 font-mono placeholder-slate-500 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 sm:text-sm"
 									placeholder="you@example.com"
 								/>
 							</div>
 						</div>
 						<div>
-							<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+							<label for="password" class="block font-mono text-xs uppercase tracking-wider text-slate-400">
 								Password
 							</label>
 							<div class="mt-1">
@@ -58,7 +56,7 @@ templ LoginPage(errorMsg string) {
 									type="password"
 									autocomplete="current-password"
 									required
-									class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 sm:text-sm"
+									class="block w-full rounded-lg border border-slate-700 bg-slate-900/50 dark:bg-slate-900 px-3 py-2 text-slate-100 font-mono placeholder-slate-500 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 sm:text-sm"
 									placeholder="••••••••"
 								/>
 							</div>
@@ -66,7 +64,7 @@ templ LoginPage(errorMsg string) {
 						<div>
 							<button
 								type="submit"
-								class="flex w-full justify-center rounded-lg bg-cyan-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 transition-colors"
+								class="flex w-full justify-center rounded-lg bg-cyan-600 px-3 py-2.5 text-sm font-mono font-semibold uppercase tracking-wider text-white shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 transition-colors"
 							>
 								Sign In
 							</button>

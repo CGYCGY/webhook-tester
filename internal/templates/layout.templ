@@ -1,5 +1,7 @@
 package templates
 
+import "github.com/cgy/webhook-tester/internal/templates/components"
+
 templ Layout(title string) {
 	<!DOCTYPE html>
 	<html lang="en" class="h-full">
@@ -9,7 +11,7 @@ templ Layout(title string) {
 			<title>{ title } - Webhook Tester</title>
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-			<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+			<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 			<link rel="stylesheet" href="/static/css/output.css"/>
 			<style>
 				:root {
@@ -28,9 +30,53 @@ templ Layout(title string) {
 					background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
 					background-size: 24px 24px;
 				}
+				h1, h2, h3, h4, h5, h6 {
+					font-family: 'JetBrains Mono', monospace;
+				}
 				code, pre, .font-mono {
 					font-family: 'JetBrains Mono', monospace;
 				}
+				.scanlines::after {
+					content: '';
+					position: fixed;
+					top: 0; left: 0; right: 0; bottom: 0;
+					pointer-events: none;
+					z-index: 9999;
+					background: repeating-linear-gradient(
+						0deg,
+						transparent,
+						transparent 2px,
+						rgba(0,0,0,0.015) 2px,
+						rgba(0,0,0,0.015) 4px
+					);
+				}
+				.dark .scanlines::after {
+					background: repeating-linear-gradient(
+						0deg,
+						transparent,
+						transparent 2px,
+						rgba(255,255,255,0.015) 2px,
+						rgba(255,255,255,0.015) 4px
+					);
+				}
+				@keyframes blink {
+					0%, 100% { opacity: 1; }
+					50% { opacity: 0; }
+				}
+				.animate-blink { animation: blink 1s step-end infinite; }
+				.stagger > *:nth-child(1) { animation-delay: 0ms; }
+				.stagger > *:nth-child(2) { animation-delay: 60ms; }
+				.stagger > *:nth-child(3) { animation-delay: 80ms; }
+				.stagger > *:nth-child(4) { animation-delay: 120ms; }
+				.stagger > *:nth-child(5) { animation-delay: 160ms; }
+				.stagger > *:nth-child(6) { animation-delay: 200ms; }
+				.stagger > *:nth-child(7) { animation-delay: 240ms; }
+				.stagger > *:nth-child(8) { animation-delay: 280ms; }
+				.stagger > *:nth-child(9) { animation-delay: 320ms; }
+				.stagger > *:nth-child(10) { animation-delay: 360ms; }
+				.stagger > *:nth-child(11) { animation-delay: 400ms; }
+				.stagger > *:nth-child(12) { animation-delay: 440ms; }
+				.glow-cyan { text-shadow: 0 0 10px rgba(34,211,238,0.3); }
 				@keyframes fadeInUp {
 					from {
 						opacity: 0;
@@ -61,15 +107,27 @@ templ Layout(title string) {
 			<script src="https://unpkg.com/htmx.org@2.0.4"></script>
 			<script src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js"></script>
 			<script>
-				// Dark mode: apply before render to prevent flash
-				if (localStorage.getItem('theme') === 'dark' ||
-					(!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+				// Dark mode: default to dark when no preference is stored
+				if (localStorage.getItem('theme') === 'light') {
+					document.documentElement.classList.remove('dark');
+				} else {
 					document.documentElement.classList.add('dark');
 				}
 			</script>
 		</head>
-		<body class="h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+		<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 scanlines">
 			{ children... }
 		</body>
 	</html>
+}
+
+templ AppLayout(title string, activePage string) {
+	@Layout(title) {
+		<div class="flex h-screen overflow-hidden">
+			@components.Sidebar(activePage)
+			<main class="flex-1 overflow-y-auto">
+				{ children... }
+			</main>
+		</div>
+	}
 }

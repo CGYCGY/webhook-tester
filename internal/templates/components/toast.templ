@@ -4,7 +4,7 @@ templ Toast(message string, toastType string) {
 	if message != "" {
 		<div
 			id="toast-notification"
-			class={ "fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 animate-slide-in " + toastColorClass(toastType) }
+			class={ "fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg font-mono text-sm font-medium transition-all duration-300 animate-slide-in " + toastColorClass(toastType) }
 			role="alert"
 		>
 			if toastType == "success" {
@@ -34,7 +34,7 @@ templ Toast(message string, toastType string) {
 
 func toastColorClass(toastType string) string {
 	if toastType == "success" {
-		return "bg-green-50 dark:bg-green-900/50 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700"
+		return "bg-green-900/90 text-green-300 border border-green-700"
 	}
-	return "bg-red-50 dark:bg-red-900/50 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-700"
+	return "bg-red-900/90 text-red-300 border border-red-700"
 }

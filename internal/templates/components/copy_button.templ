@@ -3,7 +3,7 @@ package components
 templ CopyButton(text string, label string) {
 	<button
 		type="button"
-		class="copy-btn inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded transition-colors"
+		class="copy-btn inline-flex items-center gap-1 px-2 py-1 font-mono text-xs text-slate-500 dark:text-slate-400 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded transition-colors"
 		onclick={ copyToClipboard(text) }
 		title={ "Copy " + label }
 	>
@@ -20,13 +20,13 @@ script copyToClipboard(text string) {
 	var icon = btn.querySelector('.copy-icon');
 	navigator.clipboard.writeText(text).then(function() {
 		var original = label.textContent;
-		label.textContent = 'Copied!';
+		label.textContent = '✓ Copied!';
 		btn.classList.add('text-green-600', 'dark:text-green-400');
-		btn.classList.remove('text-gray-500', 'dark:text-gray-400');
+		btn.classList.remove('text-slate-500', 'dark:text-slate-400');
 		setTimeout(function() {
 			label.textContent = original;
 			btn.classList.remove('text-green-600', 'dark:text-green-400');
-			btn.classList.add('text-gray-500', 'dark:text-gray-400');
+			btn.classList.add('text-slate-500', 'dark:text-slate-400');
 		}, 2000);
 	});
 }
