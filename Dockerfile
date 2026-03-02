@@ -6,11 +6,11 @@ RUN apk add --no-cache gcc musl-dev
 RUN go install github.com/a-h/templ/cmd/templ@v0.3.857
 
 # Install sqlc
-RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0
 
 # Install Tailwind CSS standalone
-RUN wget -qO /usr/local/bin/tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 && \
-    chmod +x /usr/local/bin/tailwindcss
+RUN apk add --no-cache nodejs npm && \
+    npm install -g tailwindcss@3
 
 WORKDIR /app
 

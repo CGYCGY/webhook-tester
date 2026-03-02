@@ -17,10 +17,9 @@ LIMIT ?;
 
 -- name: DeleteOldRequests :exec
 DELETE FROM requests
-WHERE webhook_id = ?
-  AND id NOT IN (
-    SELECT id FROM requests
-    WHERE webhook_id = ?
-    ORDER BY created_at DESC
-    LIMIT 100
-  );
+WHERE id IN (
+  SELECT r.id FROM requests r
+  WHERE r.webhook_id = ?
+  ORDER BY r.created_at DESC
+  LIMIT -1 OFFSET 100
+);
