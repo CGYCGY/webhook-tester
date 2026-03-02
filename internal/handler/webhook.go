@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -61,13 +62,17 @@ func (h *WebhookHandler) ListWebhooks(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			count = 0
 		}
+		cfg, _ := parseResponseConfig(wh.ResponseConfig)
 		views = append(views, templates.WebhookView{
-			ID:           wh.ID,
-			Name:         wh.Name,
-			Description:  wh.Description,
-			URL:          fmt.Sprintf("%s/hook/%s", base, wh.ID),
-			RequestCount: count,
-			CreatedAt:    wh.CreatedAt.Format("Jan 2, 2006"),
+			ID:                  wh.ID,
+			Name:                wh.Name,
+			Description:         wh.Description,
+			URL:                 fmt.Sprintf("%s/hook/%s", base, wh.ID),
+			RequestCount:        count,
+			CreatedAt:           wh.CreatedAt.Format("Jan 2, 2006"),
+			ResponseStatus:      cfg.Status,
+			ResponseContentType: cfg.ContentType,
+			ResponseBody:        cfg.Body,
 		})
 	}
 
@@ -251,13 +256,17 @@ func (h *WebhookHandler) ViewWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	base := baseURL(r)
+	cfg, _ := parseResponseConfig(wh.ResponseConfig)
 	webhookView := templates.WebhookView{
-		ID:           wh.ID,
-		Name:         wh.Name,
-		Description:  wh.Description,
-		URL:          fmt.Sprintf("%s/hook/%s", base, wh.ID),
-		RequestCount: int64(len(reqs)),
-		CreatedAt:    wh.CreatedAt.Format("Jan 2, 2006"),
+		ID:                  wh.ID,
+		Name:                wh.Name,
+		Description:         wh.Description,
+		URL:                 fmt.Sprintf("%s/hook/%s", base, wh.ID),
+		RequestCount:        int64(len(reqs)),
+		CreatedAt:           wh.CreatedAt.Format("Jan 2, 2006"),
+		ResponseStatus:      cfg.Status,
+		ResponseContentType: cfg.ContentType,
+		ResponseBody:        cfg.Body,
 	}
 
 	requestViews := make([]templates.RequestView, 0, len(reqs))
@@ -358,6 +367,60 @@ func (h *WebhookHandler) ViewRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templates.RequestDetailPage(webhookView, detailView).Render(r.Context(), w)
+}
+
+func (h *WebhookHandler) UpdateResponseConfig(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetUserFromContext(r.Context())
+	if claims == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	id := chi.URLParam(r, "uuid")
+
+	wh, err := h.queries.GetWebhookByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Webhook not found", http.StatusNotFound)
+		return
+	}
+
+	if wh.UserID != claims.UserID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Invalid form submission", http.StatusBadRequest)
+		return
+	}
+
+	status, err := strconv.Atoi(strings.TrimSpace(r.FormValue("response_status")))
+	if err != nil || status < 100 || status > 599 {
+		status = 200
+	}
+	contentType := strings.TrimSpace(r.FormValue("response_content_type"))
+	body := r.FormValue("response_body")
+
+	var raw string
+	if status == 200 && contentType == "" && body == "" {
+		raw = "{}"
+	} else {
+		cfg := ResponseConfig{Status: status, ContentType: contentType, Body: body}
+		b, _ := json.Marshal(cfg)
+		raw = string(b)
+	}
+
+	now := time.Now().UTC()
+	if err := h.queries.UpdateResponseConfig(r.Context(), sqlc.UpdateResponseConfigParams{
+		ResponseConfig: raw,
+		UpdatedAt:      now,
+		ID:             id,
+	}); err != nil {
+		http.Error(w, "Failed to update response config", http.StatusInternalServerError)
+		return
+	}
+
+	components.Toast("Response config saved.", "success").Render(r.Context(), w)
 }
 
 func prettyJSON(raw string) string {

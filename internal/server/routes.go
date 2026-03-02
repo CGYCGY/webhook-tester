@@ -54,6 +54,7 @@ func (s *Server) Router() *chi.Mux {
 		r.Get("/webhooks/{uuid}/sse", sseHandler.Stream)
 		r.Get("/webhooks/{uuid}/requests/{requestID}", webhookHandler.ViewRequest)
 		r.Put("/webhooks/{uuid}", webhookHandler.EditWebhook)
+		r.Patch("/webhooks/{uuid}/response", webhookHandler.UpdateResponseConfig)
 		r.Delete("/webhooks/{uuid}", webhookHandler.DeleteWebhook)
 	})
 

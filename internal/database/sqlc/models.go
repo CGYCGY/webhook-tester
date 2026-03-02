@@ -31,10 +31,11 @@ type User struct {
 }
 
 type Webhook struct {
-	ID          string
-	UserID      string
-	Name        string
-	Description string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID             string
+	UserID         string
+	Name           string
+	Description    string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	ResponseConfig string
 }

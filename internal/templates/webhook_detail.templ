@@ -1,6 +1,16 @@
 package templates
 
-import "github.com/cgy/webhook-tester/internal/templates/components"
+import (
+	"fmt"
+	"github.com/cgy/webhook-tester/internal/templates/components"
+)
+
+func statusValue(status int) string {
+	if status == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d", status)
+}
 
 templ WebhookDetailPage(wh WebhookView, requests []RequestView) {
 	@AppLayout("Webhook Detail", "dashboard") {
@@ -40,7 +50,77 @@ templ WebhookDetailPage(wh WebhookView, requests []RequestView) {
 					</div>
 				</div>
 			</div>
-			<!-- Request list section -->
+			<!-- Response config card -->
+		<div class="animate-fade-in-up bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-6 mb-8">
+			<h2 class="text-lg font-semibold font-mono text-slate-900 dark:text-slate-100 mb-1">Response Config</h2>
+			<p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+				Customize the response returned to the caller. Leave all fields at defaults to return
+				<code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 rounded">{ `{"status":"ok"}` }</code>.
+				Use <code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 rounded">{ "{{query.X}}" }</code>,
+				<code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 rounded">{ "{{header.X}}" }</code>, or
+				<code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 rounded">{ "{{body}}" }</code> in the body.
+			</p>
+			<form
+				hx-patch={ "/webhooks/" + wh.ID + "/response" }
+				hx-target="body"
+				hx-swap="beforeend"
+				class="space-y-4"
+			>
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					<div>
+						<label class="block font-mono text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+							Status Code
+						</label>
+						<input
+							name="response_status"
+							type="number"
+							min="100"
+							max="599"
+							placeholder="200"
+							value={ statusValue(wh.ResponseStatus) }
+							class="block w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm"
+						/>
+					</div>
+					<div>
+						<label class="block font-mono text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+							Content-Type
+						</label>
+						<input
+							name="response_content_type"
+							type="text"
+							placeholder="text/plain"
+							value={ wh.ResponseContentType }
+							class="block w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm"
+						/>
+					</div>
+				</div>
+				<div>
+					<label class="block font-mono text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+						Body
+					</label>
+					<textarea
+						name="response_body"
+						rows="4"
+						placeholder={ "{{query.hub.challenge}}" }
+						class="block w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm resize-none"
+					>{ wh.ResponseBody }</textarea>
+				</div>
+				<div class="flex items-center gap-3 pt-1">
+					<button
+						type="submit"
+						class="bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg px-4 py-2 font-mono uppercase tracking-wider text-xs transition-colors"
+					>
+						Save
+					</button>
+					if wh.ResponseStatus != 0 || wh.ResponseContentType != "" || wh.ResponseBody != "" {
+						<span class="font-mono text-xs text-slate-500 dark:text-slate-400">
+							→ responds { fmt.Sprintf("%d", wh.ResponseStatus) }
+						</span>
+					}
+				</div>
+			</form>
+		</div>
+		<!-- Request list section -->
 			<div hx-ext="sse" sse-connect={ "/webhooks/" + wh.ID + "/sse" }>
 				<div class="mb-4 flex items-center justify-between">
 					<h2 class="text-lg font-semibold font-mono text-slate-900 dark:text-slate-100">Captured Requests</h2>

@@ -47,20 +47,31 @@ func (q *Queries) DeleteWebhook(ctx context.Context, id string) error {
 }
 
 const getWebhookByID = `-- name: GetWebhookByID :one
-SELECT id, user_id, name, description, created_at, updated_at
+SELECT id, user_id, name, description, response_config, created_at, updated_at
 FROM webhooks
 WHERE id = ?
 LIMIT 1
 `
 
-func (q *Queries) GetWebhookByID(ctx context.Context, id string) (Webhook, error) {
+type GetWebhookByIDRow struct {
+	ID             string
+	UserID         string
+	Name           string
+	Description    string
+	ResponseConfig string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+func (q *Queries) GetWebhookByID(ctx context.Context, id string) (GetWebhookByIDRow, error) {
 	row := q.db.QueryRowContext(ctx, getWebhookByID, id)
-	var i Webhook
+	var i GetWebhookByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.Name,
 		&i.Description,
+		&i.ResponseConfig,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -80,26 +91,37 @@ func (q *Queries) GetWebhookRequestCount(ctx context.Context, webhookID string) 
 }
 
 const listWebhooksByUserID = `-- name: ListWebhooksByUserID :many
-SELECT id, user_id, name, description, created_at, updated_at
+SELECT id, user_id, name, description, response_config, created_at, updated_at
 FROM webhooks
 WHERE user_id = ?
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListWebhooksByUserID(ctx context.Context, userID string) ([]Webhook, error) {
+type ListWebhooksByUserIDRow struct {
+	ID             string
+	UserID         string
+	Name           string
+	Description    string
+	ResponseConfig string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+func (q *Queries) ListWebhooksByUserID(ctx context.Context, userID string) ([]ListWebhooksByUserIDRow, error) {
 	rows, err := q.db.QueryContext(ctx, listWebhooksByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Webhook
+	var items []ListWebhooksByUserIDRow
 	for rows.Next() {
-		var i Webhook
+		var i ListWebhooksByUserIDRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
 			&i.Name,
 			&i.Description,
+			&i.ResponseConfig,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -114,6 +136,23 @@ func (q *Queries) ListWebhooksByUserID(ctx context.Context, userID string) ([]We
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateResponseConfig = `-- name: UpdateResponseConfig :exec
+UPDATE webhooks
+SET response_config = ?, updated_at = ?
+WHERE id = ?
+`
+
+type UpdateResponseConfigParams struct {
+	ResponseConfig string
+	UpdatedAt      time.Time
+	ID             string
+}
+
+func (q *Queries) UpdateResponseConfig(ctx context.Context, arg UpdateResponseConfigParams) error {
+	_, err := q.db.ExecContext(ctx, updateResponseConfig, arg.ResponseConfig, arg.UpdatedAt, arg.ID)
+	return err
 }
 
 const updateWebhook = `-- name: UpdateWebhook :exec

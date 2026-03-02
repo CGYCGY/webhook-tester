@@ -1,12 +1,15 @@
 package components
 
 type WebhookView struct {
-	ID           string
-	Name         string
-	Description  string
-	URL          string
-	RequestCount int64
-	CreatedAt    string
+	ID                  string
+	Name                string
+	Description         string
+	URL                 string
+	RequestCount        int64
+	CreatedAt           string
+	ResponseStatus      int
+	ResponseContentType string
+	ResponseBody        string
 }
 
 type RequestView struct {
