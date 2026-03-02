@@ -218,6 +218,66 @@ func (h *WebhookHandler) DeleteWebhook(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/dashboard", http.StatusFound)
 }
 
+func (h *WebhookHandler) ViewWebhook(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetUserFromContext(r.Context())
+	if claims == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	id := chi.URLParam(r, "uuid")
+
+	wh, err := h.queries.GetWebhookByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Webhook not found", http.StatusNotFound)
+		return
+	}
+
+	if wh.UserID != claims.UserID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	reqs, err := h.queries.ListRequestsByWebhookID(r.Context(), sqlc.ListRequestsByWebhookIDParams{
+		WebhookID: id,
+		Limit:     100,
+	})
+	if err != nil {
+		http.Error(w, "Failed to load requests", http.StatusInternalServerError)
+		return
+	}
+
+	base := baseURL(r)
+	webhookView := templates.WebhookView{
+		ID:           wh.ID,
+		Name:         wh.Name,
+		Description:  wh.Description,
+		URL:          fmt.Sprintf("%s/hook/%s", base, wh.ID),
+		RequestCount: int64(len(reqs)),
+		CreatedAt:    wh.CreatedAt.Format("Jan 2, 2006"),
+	}
+
+	requestViews := make([]templates.RequestView, 0, len(reqs))
+	for _, req := range reqs {
+		path := req.Path
+		if path == "" {
+			path = "/"
+		}
+		requestViews = append(requestViews, templates.RequestView{
+			ID:            req.ID,
+			WebhookID:     req.WebhookID,
+			Method:        req.Method,
+			Path:          path,
+			SourceIP:      req.SourceIP,
+			ContentType:   req.ContentType,
+			ContentLength: req.ContentLength,
+			CreatedAt:     req.CreatedAt.Format("Jan 2, 2006 3:04 PM"),
+		})
+	}
+
+	templates.WebhookDetailPage(webhookView, requestViews).Render(r.Context(), w)
+}
+
 func validateWebhookFields(name, description string) string {
 	if name == "" {
 		return "Name is required."

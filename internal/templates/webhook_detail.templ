@@ -1,0 +1,68 @@
+package templates
+
+import "github.com/cgy/webhook-tester/internal/templates/components"
+
+templ WebhookDetailPage(wh WebhookView, requests []RequestView) {
+	@Layout("Webhook Detail") {
+		@components.Navbar()
+		<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+			<!-- Back link -->
+			<div class="mb-6">
+				<a
+					href="/dashboard"
+					class="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path>
+					</svg>
+					Back to Dashboard
+				</a>
+			</div>
+			<!-- Webhook info card -->
+			<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+				<div class="flex items-start justify-between gap-4">
+					<div class="min-w-0">
+						<h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 truncate">{ wh.Name }</h1>
+						if wh.Description != "" {
+							<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{ wh.Description }</p>
+						}
+					</div>
+					<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 whitespace-nowrap flex-shrink-0">
+						Created { wh.CreatedAt }
+					</span>
+				</div>
+				<div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wide">Webhook URL</p>
+					<div class="flex items-center gap-2">
+						<code class="flex-1 text-sm font-mono text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 truncate" title={ wh.URL }>
+							{ wh.URL }
+						</code>
+						@components.CopyButton(wh.URL, "Copy URL")
+					</div>
+				</div>
+			</div>
+			<!-- Request list section -->
+			<div>
+				<div class="mb-4 flex items-center justify-between">
+					<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Captured Requests</h2>
+					<span class="text-sm text-gray-500 dark:text-gray-400">Last 100</span>
+				</div>
+				<div id="request-list" class="flex flex-col gap-2">
+					if len(requests) == 0 {
+						<div class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-16 text-center">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 dark:text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859M12 3v8.25m0 0-3-3m3 3 3-3"></path>
+							</svg>
+							<h3 class="text-base font-medium text-gray-900 dark:text-gray-100">No requests captured yet</h3>
+							<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Send a request to <code class="font-mono text-indigo-600 dark:text-indigo-400">{ wh.URL }</code> to get started.</p>
+						</div>
+					} else {
+						for _, req := range requests {
+							@components.RequestRow(req)
+						}
+					}
+				</div>
+			</div>
+		</main>
+	}
+}
