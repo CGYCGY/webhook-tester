@@ -1,0 +1,26 @@
+services:
+  dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ..:/app
+      - go-mod-cache:/root/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+      - dev-data:/data
+    ports:
+      - "8090:8090"
+    working_dir: /app
+    command: sleep infinity
+    environment:
+      - PORT=8090
+      - DATA_DIR=/data
+      - ADMIN_EMAIL=admin@example.com
+      - ADMIN_PASSWORD=changeme123
+      - JWT_SECRET=change-this-secret-in-production
+      - CGO_ENABLED=1
+
+volumes:
+  go-mod-cache:
+  go-build-cache:
+  dev-data:
