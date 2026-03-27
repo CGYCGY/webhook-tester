@@ -40,6 +40,7 @@ func (s *Server) Router() *chi.Mux {
 
 	// Public hook capture endpoint
 	r.HandleFunc("/hook/{uuid}", hookHandler.CaptureRequest)
+	r.HandleFunc("/hook/{uuid}/*", hookHandler.CaptureRequest)
 
 	// Authenticated routes
 	r.Group(func(r chi.Router) {
