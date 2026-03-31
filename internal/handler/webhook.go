@@ -436,6 +436,65 @@ func (h *WebhookHandler) UpdateResponseConfig(w http.ResponseWriter, r *http.Req
 	components.Toast("Response config saved.", "success").Render(r.Context(), w)
 }
 
+func (h *WebhookHandler) APIListWebhooks(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetUserFromContext(r.Context())
+	if claims == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "unauthorized"})
+		return
+	}
+
+	webhooks, err := h.queries.ListWebhooksByUserID(r.Context(), claims.UserID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "failed to load webhooks"})
+		return
+	}
+
+	type responseConfig struct {
+		Status      int    `json:"status"`
+		ContentType string `json:"content_type"`
+		Body        string `json:"body"`
+	}
+	type webhookItem struct {
+		ID             string         `json:"id"`
+		Name           string         `json:"name"`
+		Description    string         `json:"description"`
+		URL            string         `json:"url"`
+		RequestCount   int64          `json:"request_count"`
+		CreatedAt      string         `json:"created_at"`
+		ResponseConfig responseConfig `json:"response_config"`
+	}
+
+	base := baseURL(r)
+	items := make([]webhookItem, 0, len(webhooks))
+	for _, wh := range webhooks {
+		count, err := h.queries.GetWebhookRequestCount(r.Context(), wh.ID)
+		if err != nil {
+			count = 0
+		}
+		cfg, _ := parseResponseConfig(wh.ResponseConfig)
+		items = append(items, webhookItem{
+			ID:           wh.ID,
+			Name:         wh.Name,
+			Description:  wh.Description,
+			URL:          fmt.Sprintf("%s/hook/%s", base, wh.ID),
+			RequestCount: count,
+			CreatedAt:    wh.CreatedAt.Format(time.RFC3339),
+			ResponseConfig: responseConfig{
+				Status:      cfg.Status,
+				ContentType: cfg.ContentType,
+				Body:        cfg.Body,
+			},
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
+}
+
 func prettyJSON(raw string) string {
 	var data any
 	if err := json.Unmarshal([]byte(raw), &data); err != nil {

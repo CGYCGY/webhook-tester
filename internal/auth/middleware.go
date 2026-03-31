@@ -13,13 +13,24 @@ const claimsKey contextKey = "auth_claims"
 func Middleware(jwtSecret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var tokenValue string
+
 			cookie, err := r.Cookie("token")
-			if err != nil {
+			if err == nil {
+				tokenValue = cookie.Value
+			} else {
+				authHeader := r.Header.Get("Authorization")
+				if strings.HasPrefix(authHeader, "Bearer ") {
+					tokenValue = strings.TrimPrefix(authHeader, "Bearer ")
+				}
+			}
+
+			if tokenValue == "" {
 				respondUnauthorized(w, r)
 				return
 			}
 
-			claims, err := ValidateToken(cookie.Value, jwtSecret)
+			claims, err := ValidateToken(tokenValue, jwtSecret)
 			if err != nil {
 				respondUnauthorized(w, r)
 				return

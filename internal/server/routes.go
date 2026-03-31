@@ -32,6 +32,7 @@ func (s *Server) Router() *chi.Mux {
 	// Public routes
 	r.Get("/login", authHandler.LoginPage)
 	r.Post("/login", authHandler.Login)
+	r.Post("/api/login", authHandler.APILogin)
 
 	webhookHandler := handler.NewWebhook(s.queries, s.config)
 	hookHandler := handler.NewHook(s.queries, s.config, s.hub, s.whLimiter, s.ipLimiter)
@@ -50,6 +51,7 @@ func (s *Server) Router() *chi.Mux {
 		r.Get("/dashboard", webhookHandler.ListWebhooks)
 		r.Get("/settings", settingsHandler.SettingsPage)
 		r.Post("/settings/password", settingsHandler.ChangePassword)
+		r.Get("/api/webhooks", webhookHandler.APIListWebhooks)
 		r.Post("/webhooks", webhookHandler.CreateWebhook)
 		r.Get("/webhooks/{uuid}", webhookHandler.ViewWebhook)
 		r.Get("/webhooks/{uuid}/sse", sseHandler.Stream)
