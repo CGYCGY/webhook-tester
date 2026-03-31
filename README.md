@@ -45,6 +45,41 @@ All configuration is via environment variables.
 | `RATE_LIMIT_PER_WEBHOOK` | No | `60` | Max requests per minute per webhook |
 | `RATE_LIMIT_PER_IP` | No | `120` | Max requests per minute per IP |
 
+## API
+
+Machine-readable API documentation is available at `/llms.txt` on any running instance.
+
+### Authentication
+
+```bash
+curl -X POST https://your-instance/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com", "password": "changeme"}'
+```
+
+Returns `{"token": "<jwt>"}`. The token expires after 24 hours.
+
+### List Webhooks
+
+```bash
+curl https://your-instance/api/webhooks \
+  -H "Authorization: Bearer <token>"
+```
+
+Returns a JSON array of webhooks with their ID, name, description, hook URL, request count, creation time, and response configuration.
+
+### Send a Request to a Webhook
+
+No authentication required — this is the public capture endpoint:
+
+```bash
+curl -X POST https://your-instance/hook/<uuid> \
+  -H "Content-Type: application/json" \
+  -d '{"event": "test"}'
+```
+
+Supports any HTTP method and sub-paths (`/hook/<uuid>/any/path`). The full request (headers, query params, body) is captured and stored.
+
 ## Password Reset
 
 If you lose access, reset the admin password directly against the database:
