@@ -28,9 +28,9 @@ docker push "${IMAGE}:${TAG}"
 echo "Pushing ${IMAGE}:${GIT_SHA} ..."
 docker push "${IMAGE}:${GIT_SHA}"
 
-if [[ -n "${COOLIFY_WEBHOOK_URL:-}" ]]; then
+if [[ -n "${COOLIFY_WEBHOOK_URL:-}" && -n "${COOLIFY_API_TOKEN:-}" ]]; then
     echo "Triggering Coolify redeploy ..."
-    curl -fsSL "$COOLIFY_WEBHOOK_URL" || echo "Warning: Coolify webhook failed"
+    curl -fsSL -H "Authorization: Bearer ${COOLIFY_API_TOKEN}" "$COOLIFY_WEBHOOK_URL" || echo "Warning: Coolify webhook failed"
 fi
 
 echo "Done! Deployed ${IMAGE}:${TAG} (${GIT_SHA})"
