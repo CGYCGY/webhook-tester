@@ -733,6 +733,66 @@ func (h *WebhookHandler) APIListRequests(w http.ResponseWriter, r *http.Request)
 	})
 }
 
+func (h *WebhookHandler) APIUpdateResponseConfig(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetUserFromContext(r.Context())
+	if claims == nil {
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	id := chi.URLParam(r, "uuid")
+
+	wh, err := h.queries.GetWebhookByID(r.Context(), id)
+	if err != nil {
+		writeJSONError(w, http.StatusNotFound, "webhook not found")
+		return
+	}
+	if wh.UserID != claims.UserID {
+		writeJSONError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	var body struct {
+		Status      int    `json:"status"`
+		ContentType string `json:"content_type"`
+		Body        string `json:"body"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSONError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+
+	if body.Status != 0 && (body.Status < 100 || body.Status > 599) {
+		writeJSONError(w, http.StatusUnprocessableEntity, "status must be 0 or in [100, 599]")
+		return
+	}
+
+	var raw string
+	if body.Status == 0 && body.ContentType == "" && body.Body == "" {
+		raw = "{}"
+	} else {
+		cfg := ResponseConfig{Status: body.Status, ContentType: body.ContentType, Body: body.Body}
+		b, _ := json.Marshal(cfg)
+		raw = string(b)
+	}
+
+	now := time.Now().UTC()
+	if err := h.queries.UpdateResponseConfig(r.Context(), sqlc.UpdateResponseConfigParams{
+		ResponseConfig: raw,
+		UpdatedAt:      now,
+		ID:             id,
+	}); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "failed to update response config")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, apiResponseConfig{
+		Status:      body.Status,
+		ContentType: body.ContentType,
+		Body:        body.Body,
+	})
+}
+
 func (h *WebhookHandler) APIGetRequest(w http.ResponseWriter, r *http.Request) {
 	claims := auth.GetUserFromContext(r.Context())
 	if claims == nil {

@@ -104,12 +104,25 @@ Authorization: Bearer <jwt>
 -> 403 {"error": "forbidden"}
 -> 404 {"error": "request not found"}
 
+### Update Response Config
+PATCH %s/api/webhooks/<uuid>/response
+Authorization: Bearer <jwt>
+Content-Type: application/json
+{"status": 200, "content_type": "application/json", "body": "{\"ok\":true}"}
+All fields optional: status 0 means default; omit content_type or body for defaults.
+Body may use {{query.X}}, {{header.X}}, {{body}} templating.
+-> 200 {"status": 200, "content_type": "application/json", "body": "{\"ok\":true}"}
+-> 400 {"error": "invalid JSON body"}
+-> 403 {"error": "forbidden"}
+-> 404 {"error": "webhook not found"}
+-> 422 {"error": "status must be 0 or in [100, 599]"}
+
 ### Send a Request to a Webhook (public, no auth)
 Any HTTP method: GET, POST, PUT, PATCH, DELETE, etc.
 %s/hook/<uuid>
 %s/hook/<uuid>/any/sub/path
 The request is captured and stored. Headers, query params, body are all recorded.
-`, base, base, base, base, base, base, base, base, base, base, base)
+`, base, base, base, base, base, base, base, base, base, base, base, base)
 	})
 
 	webhookHandler := handler.NewWebhook(s.queries, s.config)
@@ -134,6 +147,7 @@ The request is captured and stored. Headers, query params, body are all recorded
 		r.Delete("/api/webhooks/{uuid}", webhookHandler.APIDeleteWebhook)
 		r.Get("/api/webhooks/{uuid}/requests", webhookHandler.APIListRequests)
 		r.Get("/api/webhooks/{uuid}/requests/{requestID}", webhookHandler.APIGetRequest)
+		r.Patch("/api/webhooks/{uuid}/response", webhookHandler.APIUpdateResponseConfig)
 		r.Post("/webhooks", webhookHandler.CreateWebhook)
 		r.Get("/webhooks/{uuid}", webhookHandler.ViewWebhook)
 		r.Get("/webhooks/{uuid}/sse", sseHandler.Stream)
