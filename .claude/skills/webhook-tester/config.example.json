@@ -1,0 +1,5 @@
+{
+  "base_url": "https://webhooks.example.com",
+  "email": "you@example.com",
+  "password": "replace-me"
+}
