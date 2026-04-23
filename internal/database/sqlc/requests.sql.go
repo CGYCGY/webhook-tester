@@ -146,3 +146,55 @@ func (q *Queries) ListRequestsByWebhookID(ctx context.Context, arg ListRequestsB
 	}
 	return items, nil
 }
+
+const listRequestsByWebhookIDPaged = `-- name: ListRequestsByWebhookIDPaged :many
+SELECT id, webhook_id, method, path, query_params, headers, body, content_type, source_ip, content_length, created_at, response_status, response_headers, response_body
+FROM requests
+WHERE webhook_id = ?
+ORDER BY created_at DESC
+LIMIT ? OFFSET ?
+`
+
+type ListRequestsByWebhookIDPagedParams struct {
+	WebhookID string
+	Limit     int64
+	Offset    int64
+}
+
+func (q *Queries) ListRequestsByWebhookIDPaged(ctx context.Context, arg ListRequestsByWebhookIDPagedParams) ([]Request, error) {
+	rows, err := q.db.QueryContext(ctx, listRequestsByWebhookIDPaged, arg.WebhookID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Request
+	for rows.Next() {
+		var i Request
+		if err := rows.Scan(
+			&i.ID,
+			&i.WebhookID,
+			&i.Method,
+			&i.Path,
+			&i.QueryParams,
+			&i.Headers,
+			&i.Body,
+			&i.ContentType,
+			&i.SourceIp,
+			&i.ContentLength,
+			&i.CreatedAt,
+			&i.ResponseStatus,
+			&i.ResponseHeaders,
+			&i.ResponseBody,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
