@@ -436,54 +436,61 @@ func (h *WebhookHandler) UpdateResponseConfig(w http.ResponseWriter, r *http.Req
 	components.Toast("Response config saved.", "success").Render(r.Context(), w)
 }
 
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(v)
+}
+
+func writeJSONError(w http.ResponseWriter, status int, msg string) {
+	writeJSON(w, status, map[string]string{"error": msg})
+}
+
+type apiResponseConfig struct {
+	Status      int    `json:"status"`
+	ContentType string `json:"content_type"`
+	Body        string `json:"body"`
+}
+
+type apiWebhookItem struct {
+	ID             string            `json:"id"`
+	Name           string            `json:"name"`
+	Description    string            `json:"description"`
+	URL            string            `json:"url"`
+	RequestCount   int64             `json:"request_count"`
+	CreatedAt      string            `json:"created_at"`
+	ResponseConfig apiResponseConfig `json:"response_config"`
+}
+
 func (h *WebhookHandler) APIListWebhooks(w http.ResponseWriter, r *http.Request) {
 	claims := auth.GetUserFromContext(r.Context())
 	if claims == nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "unauthorized"})
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	webhooks, err := h.queries.ListWebhooksByUserID(r.Context(), claims.UserID)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "failed to load webhooks"})
+		writeJSONError(w, http.StatusInternalServerError, "failed to load webhooks")
 		return
 	}
 
-	type responseConfig struct {
-		Status      int    `json:"status"`
-		ContentType string `json:"content_type"`
-		Body        string `json:"body"`
-	}
-	type webhookItem struct {
-		ID             string         `json:"id"`
-		Name           string         `json:"name"`
-		Description    string         `json:"description"`
-		URL            string         `json:"url"`
-		RequestCount   int64          `json:"request_count"`
-		CreatedAt      string         `json:"created_at"`
-		ResponseConfig responseConfig `json:"response_config"`
-	}
-
 	base := baseURL(r)
-	items := make([]webhookItem, 0, len(webhooks))
+	items := make([]apiWebhookItem, 0, len(webhooks))
 	for _, wh := range webhooks {
 		count, err := h.queries.GetWebhookRequestCount(r.Context(), wh.ID)
 		if err != nil {
 			count = 0
 		}
 		cfg, _ := parseResponseConfig(wh.ResponseConfig)
-		items = append(items, webhookItem{
-			ID:           wh.ID,
-			Name:         wh.Name,
-			Description:  wh.Description,
-			URL:          fmt.Sprintf("%s/hook/%s", base, wh.ID),
+		items = append(items, apiWebhookItem{
+			ID:          wh.ID,
+			Name:        wh.Name,
+			Description: wh.Description,
+			URL:         fmt.Sprintf("%s/hook/%s", base, wh.ID),
 			RequestCount: count,
-			CreatedAt:    wh.CreatedAt.Format(time.RFC3339),
-			ResponseConfig: responseConfig{
+			CreatedAt:   wh.CreatedAt.Format(time.RFC3339),
+			ResponseConfig: apiResponseConfig{
 				Status:      cfg.Status,
 				ContentType: cfg.ContentType,
 				Body:        cfg.Body,
@@ -491,8 +498,91 @@ func (h *WebhookHandler) APIListWebhooks(w http.ResponseWriter, r *http.Request)
 		})
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(items)
+	writeJSON(w, http.StatusOK, items)
+}
+
+func (h *WebhookHandler) APICreateWebhook(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetUserFromContext(r.Context())
+	if claims == nil {
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var body struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSONError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+
+	name := strings.TrimSpace(body.Name)
+	description := strings.TrimSpace(body.Description)
+
+	if errMsg := validateWebhookFields(name, description); errMsg != "" {
+		writeJSONError(w, http.StatusUnprocessableEntity, errMsg)
+		return
+	}
+
+	id := uuid.New().String()
+	now := time.Now().UTC()
+
+	if err := h.queries.CreateWebhook(r.Context(), sqlc.CreateWebhookParams{
+		ID:          id,
+		UserID:      claims.UserID,
+		Name:        name,
+		Description: description,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "failed to create webhook")
+		return
+	}
+
+	base := baseURL(r)
+	cfg, _ := parseResponseConfig("")
+	writeJSON(w, http.StatusCreated, apiWebhookItem{
+		ID:          id,
+		Name:        name,
+		Description: description,
+		URL:         fmt.Sprintf("%s/hook/%s", base, id),
+		RequestCount: 0,
+		CreatedAt:   now.Format(time.RFC3339),
+		ResponseConfig: apiResponseConfig{
+			Status:      cfg.Status,
+			ContentType: cfg.ContentType,
+			Body:        cfg.Body,
+		},
+	})
+}
+
+func (h *WebhookHandler) APIDeleteWebhook(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetUserFromContext(r.Context())
+	if claims == nil {
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	id := chi.URLParam(r, "uuid")
+
+	wh, err := h.queries.GetWebhookByID(r.Context(), id)
+	if err != nil {
+		writeJSONError(w, http.StatusNotFound, "webhook not found")
+		return
+	}
+
+	if wh.UserID != claims.UserID {
+		writeJSONError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	if err := h.queries.DeleteWebhook(r.Context(), id); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "failed to delete webhook")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func prettyJSON(raw string) string {

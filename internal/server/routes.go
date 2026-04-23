@@ -99,6 +99,8 @@ The request is captured and stored. Headers, query params, body are all recorded
 		r.Get("/settings", settingsHandler.SettingsPage)
 		r.Post("/settings/password", settingsHandler.ChangePassword)
 		r.Get("/api/webhooks", webhookHandler.APIListWebhooks)
+		r.Post("/api/webhooks", webhookHandler.APICreateWebhook)
+		r.Delete("/api/webhooks/{uuid}", webhookHandler.APIDeleteWebhook)
 		r.Post("/webhooks", webhookHandler.CreateWebhook)
 		r.Get("/webhooks/{uuid}", webhookHandler.ViewWebhook)
 		r.Get("/webhooks/{uuid}/sse", sseHandler.Stream)
