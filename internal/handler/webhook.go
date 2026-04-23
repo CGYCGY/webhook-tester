@@ -645,3 +645,158 @@ func validateWebhookFields(name, description string) string {
 	}
 	return ""
 }
+
+func (h *WebhookHandler) APIListRequests(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetUserFromContext(r.Context())
+	if claims == nil {
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	webhookID := chi.URLParam(r, "uuid")
+
+	wh, err := h.queries.GetWebhookByID(r.Context(), webhookID)
+	if err != nil {
+		writeJSONError(w, http.StatusNotFound, "webhook not found")
+		return
+	}
+	if wh.UserID != claims.UserID {
+		writeJSONError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	limit := int64(10)
+	offset := int64(0)
+
+	if v := r.URL.Query().Get("limit"); v != "" {
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil || n < 1 || n > 500 {
+			writeJSONError(w, http.StatusBadRequest, "limit must be between 1 and 500")
+			return
+		}
+		limit = n
+	}
+	if v := r.URL.Query().Get("offset"); v != "" {
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil || n < 0 {
+			writeJSONError(w, http.StatusBadRequest, "offset must be >= 0")
+			return
+		}
+		offset = n
+	}
+
+	reqs, err := h.queries.ListRequestsByWebhookIDPaged(r.Context(), sqlc.ListRequestsByWebhookIDPagedParams{
+		WebhookID: webhookID,
+		Limit:     limit,
+		Offset:    offset,
+	})
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, "failed to load requests")
+		return
+	}
+
+	type requestItem struct {
+		ID             string `json:"id"`
+		WebhookID      string `json:"webhook_id"`
+		Method         string `json:"method"`
+		Path           string `json:"path"`
+		SourceIP       string `json:"source_ip"`
+		ContentType    string `json:"content_type"`
+		ContentLength  int64  `json:"content_length"`
+		ResponseStatus int64  `json:"response_status"`
+		CreatedAt      string `json:"created_at"`
+	}
+
+	items := make([]requestItem, 0, len(reqs))
+	for _, req := range reqs {
+		path := req.Path
+		if path == "" {
+			path = "/"
+		}
+		items = append(items, requestItem{
+			ID:             req.ID,
+			WebhookID:      req.WebhookID,
+			Method:         req.Method,
+			Path:           path,
+			SourceIP:       req.SourceIp,
+			ContentType:    req.ContentType,
+			ContentLength:  req.ContentLength,
+			ResponseStatus: req.ResponseStatus,
+			CreatedAt:      req.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"requests": items,
+		"limit":    limit,
+		"offset":   offset,
+	})
+}
+
+func (h *WebhookHandler) APIGetRequest(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetUserFromContext(r.Context())
+	if claims == nil {
+		writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	webhookID := chi.URLParam(r, "uuid")
+	requestID := chi.URLParam(r, "requestID")
+
+	wh, err := h.queries.GetWebhookByID(r.Context(), webhookID)
+	if err != nil {
+		writeJSONError(w, http.StatusNotFound, "webhook not found")
+		return
+	}
+	if wh.UserID != claims.UserID {
+		writeJSONError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	req, err := h.queries.GetRequestByID(r.Context(), requestID)
+	if err != nil {
+		writeJSONError(w, http.StatusNotFound, "request not found")
+		return
+	}
+	if req.WebhookID != webhookID {
+		writeJSONError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	var headers map[string]string
+	if err := json.Unmarshal([]byte(req.Headers), &headers); err != nil {
+		headers = make(map[string]string)
+	}
+
+	var queryParams map[string]string
+	if err := json.Unmarshal([]byte(req.QueryParams), &queryParams); err != nil {
+		queryParams = make(map[string]string)
+	}
+
+	var respHeaders map[string]string
+	if err := json.Unmarshal([]byte(req.ResponseHeaders), &respHeaders); err != nil {
+		respHeaders = make(map[string]string)
+	}
+
+	path := req.Path
+	if path == "" {
+		path = "/"
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"id":               req.ID,
+		"webhook_id":       req.WebhookID,
+		"method":           req.Method,
+		"path":             path,
+		"source_ip":        req.SourceIp,
+		"content_type":     req.ContentType,
+		"content_length":   req.ContentLength,
+		"response_status":  req.ResponseStatus,
+		"created_at":       req.CreatedAt.Format(time.RFC3339),
+		"headers":          headers,
+		"query_params":     queryParams,
+		"body":             req.Body,
+		"response_headers": respHeaders,
+		"response_body":    req.ResponseBody,
+	})
+}

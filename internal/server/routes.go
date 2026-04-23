@@ -101,6 +101,8 @@ The request is captured and stored. Headers, query params, body are all recorded
 		r.Get("/api/webhooks", webhookHandler.APIListWebhooks)
 		r.Post("/api/webhooks", webhookHandler.APICreateWebhook)
 		r.Delete("/api/webhooks/{uuid}", webhookHandler.APIDeleteWebhook)
+		r.Get("/api/webhooks/{uuid}/requests", webhookHandler.APIListRequests)
+		r.Get("/api/webhooks/{uuid}/requests/{requestID}", webhookHandler.APIGetRequest)
 		r.Post("/webhooks", webhookHandler.CreateWebhook)
 		r.Get("/webhooks/{uuid}", webhookHandler.ViewWebhook)
 		r.Get("/webhooks/{uuid}/sse", sseHandler.Stream)
