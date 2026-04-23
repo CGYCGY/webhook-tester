@@ -11,14 +11,14 @@ templ RequestDetailPage(wh WebhookView, req DetailRequestView) {
 		<nav class="sticky top-0 z-20 flex items-center justify-between gap-4 px-6 lg:px-8 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-slate-200 dark:border-slate-700">
 			<a
 				href={ templ.SafeURL("/webhooks/" + wh.ID) }
-				class="inline-flex items-center gap-1 font-mono text-xs uppercase tracking-wider text-slate-500 hover:text-cyan-500 transition-colors shrink-0 sm:min-w-0 sm:flex-1"
+				class="inline-flex items-center gap-1 font-mono text-xs uppercase tracking-wider text-slate-500 hover:text-cyan-500 transition-colors min-w-0"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path>
 				</svg>
 				<span class="hidden sm:inline truncate">Back to { wh.Name }</span>
 			</a>
-			<div class="flex items-center gap-2 min-w-0 flex-1 justify-end">
+			<div class="flex items-center gap-2 min-w-0 shrink-0">
 				@components.MethodBadge(req.Method)
 				<span class="truncate font-mono text-sm text-slate-700 dark:text-slate-200" title={ req.Path }>
 					if req.Path != "" {
