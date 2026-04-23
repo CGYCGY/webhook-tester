@@ -73,12 +73,43 @@ GET %s/api/webhooks
 Authorization: Bearer <jwt>
 -> 200 [{"id": "<uuid>", "name": "...", "description": "...", "url": "%s/hook/<uuid>", "request_count": 5, "created_at": "2006-01-02T15:04:05Z", "response_config": {"status": 200, "content_type": "application/json", "body": "..."}}]
 
+### Create Webhook
+POST %s/api/webhooks
+Authorization: Bearer <jwt>
+Content-Type: application/json
+{"name": "My Webhook", "description": "optional description"}
+-> 201 {"id": "<uuid>", "name": "My Webhook", "description": "optional description", "url": "%s/hook/<uuid>", "request_count": 0, "created_at": "2006-01-02T15:04:05Z", "response_config": {"status": 0, "content_type": "", "body": ""}}
+-> 400 {"error": "invalid JSON body"}
+-> 422 {"error": "<validation message>"}
+
+### Delete Webhook
+DELETE %s/api/webhooks/<uuid>
+Authorization: Bearer <jwt>
+-> 204 (no content)
+-> 403 {"error": "forbidden"}
+-> 404 {"error": "webhook not found"}
+
+### List Captured Requests
+GET %s/api/webhooks/<uuid>/requests?limit=10&offset=0
+Authorization: Bearer <jwt>
+limit: default 10, min 1, max 500
+offset: default 0
+-> 200 {"requests": [{"id": "<uuid>", "webhook_id": "<uuid>", "method": "POST", "path": "/", "source_ip": "1.2.3.4", "content_type": "application/json", "content_length": 123, "response_status": 200, "created_at": "2006-01-02T15:04:05Z"}], "limit": 10, "offset": 0}
+-> 400 {"error": "<validation message>"}
+
+### Get Captured Request
+GET %s/api/webhooks/<uuid>/requests/<requestID>
+Authorization: Bearer <jwt>
+-> 200 {"id": "<uuid>", "webhook_id": "<uuid>", "method": "POST", "path": "/", "source_ip": "1.2.3.4", "content_type": "application/json", "content_length": 123, "response_status": 200, "created_at": "2006-01-02T15:04:05Z", "headers": {"Content-Type": "application/json"}, "query_params": {"key": "value"}, "body": "...", "response_headers": {"Content-Type": "application/json"}, "response_body": "..."}
+-> 403 {"error": "forbidden"}
+-> 404 {"error": "request not found"}
+
 ### Send a Request to a Webhook (public, no auth)
 Any HTTP method: GET, POST, PUT, PATCH, DELETE, etc.
 %s/hook/<uuid>
 %s/hook/<uuid>/any/sub/path
 The request is captured and stored. Headers, query params, body are all recorded.
-`, base, base, base, base, base, base)
+`, base, base, base, base, base, base, base, base, base, base, base)
 	})
 
 	webhookHandler := handler.NewWebhook(s.queries, s.config)
